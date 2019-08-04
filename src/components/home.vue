@@ -21,13 +21,15 @@
     
     <el-menu
       class="el-menu-vertical-demo"
-      :unique-opened='true'>
+      :unique-opened='true'
+      :router="true"
+      >
       <el-submenu index="1">
         <template slot="title">
           <i class="el-icon-location"></i>
           <span>用户管理</span>
         </template>
-          <el-menu-item index="1-1"> <i class="el-icon-menu"></i>用户列表</el-menu-item>
+          <el-menu-item index="users"> <i class="el-icon-menu"></i>用户列表</el-menu-item>
       </el-submenu>
 
        <el-submenu index="2">
@@ -68,7 +70,9 @@
     </el-menu>
 
     </el-aside>
-    <el-main class="mian">Main</el-main>
+    <el-main class="mian">
+       <router-view></router-view>
+    </el-main>
   </el-container>
 </el-container>
  
