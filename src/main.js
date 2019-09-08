@@ -7,14 +7,18 @@ import 'element-ui/lib/theme-chalk/index.css';
 import router from './router'
 import '@/assets/css/reset.css'
 import MyHttpServer from '@/plugin/http.js'
+import moment from 'moment'
 
 Vue.use(ElementUI);
 Vue.use(MyHttpServer)
 
 Vue.config.productionTip = false
 
-
-
+Vue.filter('fmtdate',(value,formatString)=>{
+  let date = new Date(value);
+  formatString = formatString || 'YYYY-MM-DD HH:mm:ss';
+  return moment(date).format(formatString);
+})
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

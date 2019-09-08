@@ -56,15 +56,15 @@
       </el-table-column>
       <el-table-column label="用户状态">
         <template slot-scope="scope">
-          <el-switch v-model="scope.row.mg_state" active-color="#13ce66" inactive-color="#ff4949"></el-switch>
+          <el-switch v-model="scope.row.mg_state" @change="changestate(scope.row)" active-color="#13ce66" inactive-color="#ff4949"></el-switch>
         </template>
       </el-table-column>
       <el-table-column prop label="操作">
         <template slot-scope="scope">
           <el-row>
-            <el-button plain size="mini" type="primary" @click="edituser" icon="el-icon-edit" circle></el-button>
+            <el-button plain size="mini" type="primary" @click="edituser(scope.row)" icon="el-icon-edit" circle></el-button>
             <el-button plain size="mini" type="danger" @click="deleteuser(scope.row.id)" icon="el-icon-delete" circle></el-button>
-            <el-button plain size="mini" type="success" icon="el-icon-check" circle></el-button>
+            <el-button plain size="mini" type="success" @click="quanxian(scope.row)" icon="el-icon-check" circle></el-button>
           </el-row>
         </template>
       </el-table-column>
@@ -72,25 +72,24 @@
 
  <el-dialog title="编辑用户" :visible.sync="dialogFormVisibleedit">
   <el-form :model="form">
-    <el-form-item label="用户名称" :label-width="formLabelWidth">
-      <el-input v-model="form.username" autocomplete="off"></el-input>
+    <el-form-item  label="用户名称" :label-width="formLabelWidth">
+      <el-input disabled v-model="form.username" autocomplete="off"></el-input>
     </el-form-item>
 
      <el-form-item label="邮箱" :label-width="formLabelWidth">
-      <el-input v-model="form.password" autocomplete="off"></el-input>
+      <el-input v-model="form.email" autocomplete="off"></el-input>
     </el-form-item>
 
      <el-form-item label="电话" :label-width="formLabelWidth">
-      <el-input v-model="form.email" autocomplete="off"></el-input>
+      <el-input v-model="form.mobile" autocomplete="off"></el-input>
     </el-form-item>
 
   </el-form>
 <div slot="footer" class="dialog-footer">
     <el-button @click="dialogFormVisible = false">取 消</el-button>
-    <el-button type="primary" @click="adduser">确 定</el-button>
+    <el-button type="primary" @click="edituserpost()">确 定</el-button>
   </div>
  </el-dialog>
-
     <el-pagination
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
@@ -100,6 +99,30 @@
       layout="total, sizes, prev, pager, next, jumper"
       :total="total"
     ></el-pagination>
+
+  <el-dialog title="分配角色" :visible.sync="dialogFormVisible2">
+  <el-form :model="form">
+    <el-form-item label="用户名" :label-width="formLabelWidth">
+      {{currentuser}}
+    </el-form-item>
+    <el-form-item label="角色" :label-width="formLabelWidth">
+
+      <!-- 如果select绑定的数据值和option的value一样，就会显示该option的label值-->
+      <el-select v-model="currentid" >
+        <el-option label="请选择角色" :value="-1"></el-option>
+         <el-option :label="item.roleName" :value="item.id"
+         v-for="(item,index) in role" :key="index"
+         >
+         </el-option>
+
+      </el-select>
+    </el-form-item>
+  </el-form>
+  <div slot="footer" class="dialog-footer">
+    <el-button @click="dialogFormVisible = false">取 消</el-button>
+    <el-button type="primary" @click="setrole()">确 定</el-button>
+  </div>
+</el-dialog>
   </el-card>
 </template>
 
@@ -108,8 +131,13 @@ import axios from "axios";
 export default {
   data() {
     return {
+      val: '',
+      role:[],
+      currentuser:'',
+      currentid:-1,
       dialogFormVisible: false,
       dialogFormVisibleedit:false,
+      dialogFormVisible2:false,
       form: {
         username: '',
         password: '',
@@ -121,15 +149,54 @@ export default {
       pagenum: 1,
       pagesize: 7,
       userslist: [],
-      total: -1
-    };
+      total: -1,
+      currentuserid:-1
+      //currentUserid:-1
+      
+      };
+    
   },
   created() {
     this.getUsersList();
   },
   methods: {
-      edituser(){
-          this.dialogFormVisibleedit=true
+    async setrole(){
+      this.dialogFormVisible2=false
+      const res = await this.$http.put(`users/${this.currentuserid}/role`,{rid:this.currentid})
+     console.log(res)
+    },
+    async quanxian(user){
+      this.dialogFormVisible2 = true;
+      this.currentuser=user.username
+      this.currentuserid=user.id
+      const res1 = await this.$http.get(`roles`)
+      this.role=res1.data.data
+      const res = await this.$http.get(`users/${user.id}`)
+      this.currentid=res.data.data.rid
+     
+    },
+    async changestate(user){
+
+    const res = await this.$http.put(`users/${user.id}/state/${user.mg_state}`);
+    console.log(res)
+    },
+      async edituserpost(){
+          const res = await this.$http.put(`users/${this.form.id}`,this.form)
+          console.log(res)
+          this.getUsersList();
+          this.dialogFormVisibleedit=false
+      },
+      edituser(user){
+       
+       // this.form = user
+
+           this.form.username = user.username
+           this.form.email = user.email
+           this.form.mobile = user.mobile
+           this.form.id = user.id
+
+        this.dialogFormVisibleedit=true
+        
       },
       deleteuser(id){
         this.$confirm('正在删除该用户, 是否继续?', '提示', {
@@ -147,7 +214,7 @@ export default {
            }else{
 
            }
-           console.log(res)
+           
           this.$message({
             type: 'success',
             message: '删除成功!'
@@ -161,7 +228,7 @@ export default {
       },
       async adduser(){
       const res = await this.$http.post(`users`,this.form)
-      console.log(res)
+ 
       const {meta:{status,msg},data} = res.data
       this.dialogFormVisible = false
       if(status === 201){
@@ -192,17 +259,16 @@ export default {
       this.getUsersList();
     },
     handleCurrentChange(val) {
-      console.log(`当前页: ${val}`);
+    
       this.pagenum = val;
       this.getUsersList();
     },
     async getUsersList() {
-      const AUTH_TOKEN = localStorage.getItem("token");
-      axios.defaults.headers.common["Authorization"] = AUTH_TOKEN;
+  
       const res = await this.$http.get(
         `users?query=${this.input}&pagenum=${this.pagenum}&pagesize=${this.pagesize}`
       );
-      console.log(res);
+     console.log(res)
       const {
         data: { total, pagenum, users },
         meta: { status, msg }
